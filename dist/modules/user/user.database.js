@@ -17,5 +17,17 @@ export class UserDatabase {
         const res = await this.col().insertOne(doc);
         return { _id: res.insertedId, ...doc };
     }
+    async insertMany(docs) {
+        const res = await this.col().insertMany(docs);
+        return docs.map((doc, i) => ({ _id: res.insertedIds[i], ...doc }));
+    }
+    async updateOne(id, update) {
+        await this.col().updateOne({ _id: new ObjectId(id) }, { $set: update });
+        return this.findById(id);
+    }
+    async deleteOne(id) {
+        const res = await this.col().deleteOne({ _id: new ObjectId(id) });
+        return res.deletedCount === 1;
+    }
 }
 //# sourceMappingURL=user.database.js.map
