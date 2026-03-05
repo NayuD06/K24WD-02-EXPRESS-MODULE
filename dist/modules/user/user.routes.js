@@ -8,5 +8,8 @@ const service = new UserService(db);
 const controller = new UserController(service);
 router.get("/", controller.list);
 router.post("/register", controller.register);
+router.put("/:id", controller.replace);
+router.patch("/:id", controller.update);
+router.delete("/:id", controller.delete);
 export const userRoutes = router;
 //# sourceMappingURL=user.routes.js.map

@@ -41,5 +41,70 @@ export class UserService {
             updatedAt: now,
         });
     }
+    // PUT
+    async replace(id, input) {
+        const existing = await this.userDb.findById(id);
+        if (!existing)
+            throw new ApiError(404, { message: "User not found" });
+        const email = input.email.trim().toLowerCase();
+        if (!email.includes("@"))
+            throw new ApiError(400, { message: "Email must include @" });
+        const dup = await this.userDb.findByEmail(email);
+        if (dup && dup._id.toHexString() !== id)
+            throw new ApiError(409, { message: "Email already exists" });
+        const pwd = input.password.trim();
+        if (pwd.length < 6)
+            throw new ApiError(400, { message: "Password must be at least 6 characters" });
+        if (!/[A-Z]/.test(pwd))
+            throw new ApiError(400, { message: "Password must contain at least 1 uppercase letter" });
+        if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd))
+            throw new ApiError(400, { message: "Password must contain at least 1 special character" });
+        const hashPwd = await hashPassword(pwd);
+        const user = await this.userDb.updateOne(id, {
+            email,
+            passwordHash: hashPwd,
+            role: input.role,
+            updatedAt: new Date(),
+        });
+        if (!user)
+            throw new ApiError(404, { message: "User not found" });
+        return user;
+    }
+    // PATCH
+    async update(id, input) {
+        const update = {};
+        if (input.email) {
+            const email = input.email.trim().toLowerCase();
+            if (!email.includes("@"))
+                throw new ApiError(400, { message: "Email must include @" });
+            const existing = await this.userDb.findByEmail(email);
+            if (existing && existing._id.toHexString() !== id) {
+                throw new ApiError(409, { message: "Email already exists" });
+            }
+            update.email = email;
+        }
+        if (input.password) {
+            const pwd = input.password.trim();
+            if (pwd.length < 6)
+                throw new ApiError(400, { message: "Password must be at least 6 characters" });
+            if (!/[A-Z]/.test(pwd))
+                throw new ApiError(400, { message: "Password must contain at least 1 uppercase letter" });
+            if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd))
+                throw new ApiError(400, { message: "Password must contain at least 1 special character" });
+            update.passwordHash = await hashPassword(pwd);
+        }
+        if (input.role)
+            update.role = input.role;
+        update.updatedAt = new Date();
+        const user = await this.userDb.updateOne(id, update);
+        if (!user)
+            throw new ApiError(404, { message: "User not found" });
+        return user;
+    }
+    async delete(id) {
+        const ok = await this.userDb.deleteOne(id);
+        if (!ok)
+            throw new ApiError(404, { message: "User not found" });
+    }
 }
 //# sourceMappingURL=user.service.js.map
